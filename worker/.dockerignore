@@ -1,0 +1,14 @@
+cat << 'EOF' > worker/.dockerignore
+.git
+.gitignore
+.env
+*.env
+node_modules/
+Dockerfile
+.dockerignore
+README.md
+EOF
+bin/
+obj/
+.vs/
+.vscode/

@@ -1,0 +1,14 @@
+cat << 'EOF' > vote/.dockerignore
+.git
+.gitignore
+.env
+*.env
+__pycache__/
+*.pyc
+.pytest_cache/
+venv/
+.venv/
+Dockerfile
+.dockerignore
+README.md
+EOF
