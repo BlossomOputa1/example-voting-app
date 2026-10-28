@@ -73,16 +73,11 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-# 6. Run Trivy Vulnerability Scan
-      - name: Run Trivy Vulnerability Scanner
-        uses: aquasecurity/trivy-action@main
-        with:
-          image-ref: ${{ matrix.name }}:${{ github.sha }}
-          format: 'table'
-          exit-code: '0'
-          ignore-unfixed: true
-          vuln-type: 'os,library'
-          severity: 'CRITICAL,HIGH'
+# 6. Run Trivy Vulnerability Scan via official binary
+      - name: Install and Run Trivy Scanner
+        run: |
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+          trivy image --severity HIGH,CRITICAL --ignore-unfixed --exit-code 0 ${{ matrix.name }}:${{ github.sha }}
 
       # 7. Push to Registry (Tagged with Commit SHA)
       - name: Push Docker Image
