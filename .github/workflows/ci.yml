@@ -75,7 +75,7 @@ jobs:
 
 # 6. Run Trivy Vulnerability Scan
       - name: Run Trivy Vulnerability Scanner
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@main
         with:
           image-ref: ${{ matrix.name }}:${{ github.sha }}
           format: 'table'
