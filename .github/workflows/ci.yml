@@ -1,0 +1,97 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  test-build-scan-push:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: vote
+            context: ./vote
+            dockerfile: ./vote/Dockerfile
+          - name: result
+            context: ./result
+            dockerfile: ./result/Dockerfile
+          - name: worker
+            context: ./worker
+            dockerfile: ./worker/Dockerfile
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # 1. Run Tests (if applicable)
+      - name: Run Unit Tests (${{ matrix.name }})
+        run: |
+          echo "Running unit tests for ${{ matrix.name }}..."
+          if [ "${{ matrix.name }}" = "vote" ] && [ -f "./vote/tests.py" ]; then
+            python -m unittest discover -s ./vote
+          elif [ "${{ matrix.name }}" = "result" ] && [ -f "./result/package.json" ]; then
+            cd ./result && npm test --if-present
+          else
+            echo "No test suite defined for ${{ matrix.name }}, proceeding."
+          fi
+
+      # 2. Set up Docker Buildx
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # 3. Log in to Docker Hub
+      - name: Log in to Docker Hub
+        if: github.event_name == 'push'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # 4. Extract Git Metadata & Tag with Commit SHA
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ secrets.DOCKERHUB_USERNAME }}/examplevotingapp_${{ matrix.name }}
+          tags: |
+            type=sha,format=short,prefix=
+            type=sha,format=long,prefix=
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      # 5. Build Locally (Loaded to local Docker daemon for scanning)
+      - name: Build image for scanning
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          load: true
+          tags: ${{ matrix.name }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # 6. Run Trivy Vulnerability Scan
+      - name: Run Trivy Vulnerability Scanner
+        uses: aquasecurity/trivy-action@0.29.0
+        with:
+          image-ref: ${{ matrix.name }}:${{ github.sha }}
+          format: 'table'
+          exit-code: '0' # Set to '1' if you want HIGH/CRITICAL CVEs to break the build
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL,HIGH'
+
+      # 7. Push to Registry (Tagged with Commit SHA)
+      - name: Push Docker Image
+        if: github.event_name == 'push'
+        uses: docker/build-push-action@v5
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
