@@ -27,18 +27,19 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # 1. Run Tests (if applicable)
+# 1. Run Tests (if applicable)
       - name: Run Unit Tests (${{ matrix.name }})
         run: |
           echo "Running unit tests for ${{ matrix.name }}..."
           if [ "${{ matrix.name }}" = "vote" ] && [ -f "./vote/tests.py" ]; then
             python -m unittest discover -s ./vote
+          elif [ "${{ matrix.name }}" = "result" ] && grep -q '"test":.*exit 1' ./result/package.json; then
+            echo "No unit tests configured for result service. Skipping."
           elif [ "${{ matrix.name }}" = "result" ] && [ -f "./result/package.json" ]; then
             cd ./result && npm test --if-present
           else
             echo "No test suite defined for ${{ matrix.name }}, proceeding."
           fi
-
       # 2. Set up Docker Buildx
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
