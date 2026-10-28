@@ -73,13 +73,13 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      # 6. Run Trivy Vulnerability Scan
+# 6. Run Trivy Vulnerability Scan
       - name: Run Trivy Vulnerability Scanner
-        uses: aquasecurity/trivy-action@0.29.0
+        uses: aquasecurity/trivy-action@0.28.0
         with:
           image-ref: ${{ matrix.name }}:${{ github.sha }}
           format: 'table'
-          exit-code: '0' # Set to '1' if you want HIGH/CRITICAL CVEs to break the build
+          exit-code: '0'
           ignore-unfixed: true
           vuln-type: 'os,library'
           severity: 'CRITICAL,HIGH'
