@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: result
+  labels:
+    app: result
+spec:
+  replicas: {{ .Values.result.replicaCount }}
+  selector:
+    matchLabels:
+      app: result
+  template:
+    metadata:
+      labels:
+        app: result
+    spec:
+      containers:
+        - name: result
+          image: "{{ .Values.result.image.repository }}:{{ .Values.result.image.tag }}"
+          imagePullPolicy: {{ .Values.result.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.result.service.port }}
+              name: result
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: result
+  labels:
+    app: result
+spec:
+  type: {{ .Values.result.service.type }}
+  ports:
+    - port: {{ .Values.result.service.port }}
+      targetPort: {{ .Values.result.service.port }}
+      nodePort: {{ .Values.result.service.nodePort }}
+      name: result
+  selector:
+    app: result

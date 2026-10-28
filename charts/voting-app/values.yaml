@@ -1,0 +1,55 @@
+# Vote frontend service
+vote:
+  replicaCount: 1
+  image:
+    repository: dockersamples/examplevotingapp_vote
+    tag: before
+    pullPolicy: IfNotPresent
+  service:
+    type: NodePort
+    port: 80
+    nodePort: 31000
+
+# Result frontend service
+result:
+  replicaCount: 1
+  image:
+    repository: dockersamples/examplevotingapp_result
+    tag: before
+    pullPolicy: IfNotPresent
+  service:
+    type: NodePort
+    port: 8081
+    nodePort: 31001
+
+# Worker background service
+worker:
+  replicaCount: 1
+  image:
+    repository: dockersamples/examplevotingapp_worker
+    tag: latest
+    pullPolicy: IfNotPresent
+
+# Redis in-memory broker
+redis:
+  image:
+    repository: redis
+    tag: alpine
+    pullPolicy: IfNotPresent
+  service:
+    port: 6379
+
+# PostgreSQL database
+db:
+  image:
+    repository: postgres
+    tag: "15-alpine"
+    pullPolicy: IfNotPresent
+  service:
+    port: 5432
+  env:
+    POSTGRES_USER: postgres
+    POSTGRES_PASSWORD: postgrespassword
+    POSTGRES_DB: postgres
+  persistence:
+    enabled: false # Set to true with PVC if storage class is configured
